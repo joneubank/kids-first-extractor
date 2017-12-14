@@ -15,6 +15,7 @@
 ## Introduction
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/7afa4461328e4292b9967aedef235d99)](https://www.codacy.com/app/joneubank/kids-first-extractor?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=joneubank/kids-first-extractor&amp;utm_campaign=Badge_Grade)
 
 Command line application written with Scala and using Spark.
 
