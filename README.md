@@ -10,6 +10,7 @@
 - [Introduction](#introduction)
 - [Requirements](#requirements)
 - [Quick Start](#quick-start)
+- [Reference](#reference)
 
 
 ## Introduction
@@ -31,4 +32,9 @@ The following software is required to run the application:
 ```$bash
 sbt run
 ```
+## Reference
+Kids First:
+ * [Submission Portal](https://gen3.kids-first.io/) - Requires Approved Access
+ * [Data Dictionary](https://gen3.kids-first.io/dd)
+
 
