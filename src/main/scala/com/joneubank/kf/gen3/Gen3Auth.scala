@@ -4,9 +4,10 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, TimeZone}
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
+import javax.ws.rs.HttpMethod
 
 import org.apache.http.HttpRequest
-import org.apache.http.client.methods.{HttpGet, HttpPost}
+import org.apache.http.client.methods.{HttpGet, HttpPost, HttpRequestBase}
 import org.apache.http.entity.ByteArrayEntity
 import org.apache.http.util.CharsetUtils
 
@@ -37,12 +38,12 @@ object Gen3Auth {
   private val service = "submission"
 
 
-  /* ****************
-     REQUEST METHOD
-   **************** */
+  /* ***************
+     REQUEST MAKER
+   *************** */
 
   /**
-    * Prepares an HttpPOST Object that is Signed to be accepted by the Kids First Gen3 Submission API.
+    * Prepares an HttpRequest Object that is Signed to be accepted by the Kids First Gen3 Submission API.
     * This does not send the HTTP request, just prepares the object.
     *
     * This process is slightly hardcoded as currently setup. It assumes the desired service is "submission", and that
@@ -53,24 +54,23 @@ object Gen3Auth {
     *
     * @param path URI from after the host. Start with "/" Example: "/api/v0/submission/graphql"
     * @param body String representation of JSON
-    * @return HttpPost object ready to be sent, with headers set for Authorization to the submission service
+    * @return HttpRequest object ready to be sent, with headers set for Authorization to the submission service
     */
-  def makeRequest(path: String, body: String): HttpPost = {
-
+  def makeRequest(method: String, path: String, query: String, body: String): HttpRequestBase = {
     /*
-     * Process:
-     * 1. Constants used to build request
-     *     (formatted dates, url, body and body hash, scope)
-     * 2. Set Signed Headers
-     *     (content-type, host, x-amz-content-sha256, x-amz-date)
-     * 3. Canonical Request
-     *     used for generating signature
-     * 4. Signature
-     *     used for Authorization header, requires Canonical Request
-     * 5. Authorization header value
-     *     requires Signature. Added as header.
-     * 6. RETURN!
-     */
+         * Process:
+         * 1. Constants used to build request
+         *     (formatted dates, url, body and body hash, scope)
+         * 2. Set Signed Headers
+         *     (content-type, host, x-amz-content-sha256, x-amz-date)
+         * 3. Canonical Request
+         *     used for generating signature
+         * 4. Signature
+         *     used for Authorization header, requires Canonical Request
+         * 5. Authorization header value
+         *     requires Signature. Added as header.
+         * 6. RETURN!
+         */
 
     // ===== 1. CONSTANTS ======
     // =========================
@@ -78,13 +78,10 @@ object Gen3Auth {
     val longDate = dateFormatLong.format(date)
     val shortDate = dateFormatShort.format(date)
 
-    val url = Seq(Gen3Config.protocol, "://", Gen3Config.host, path).mkString
+    val queryString = if (query.isEmpty) "" else "?"+query
+    val url = Seq(Gen3Config.protocol, "://", Gen3Config.host, path, queryString).mkString
 
-    val request = new HttpPost(url)
-
-    request.setEntity(new ByteArrayEntity(
-      body.getBytes(charsetUtf8)
-    ))
+    val request = if (method == HttpMethod.POST) makePost(url, body) else new HttpGet(url)
 
     // bodyHash is used for content header and for canonicalRequest
     val bodyHash = sha256Hash(body)
@@ -108,8 +105,9 @@ object Gen3Auth {
 
     val canonicalRequest = buildCanonicalRequest(
       request=request,
-      method="POST",
+      method=method,
       uri=path,
+      query=query,
       bodyHash=bodyHash
     )
 
@@ -141,6 +139,14 @@ object Gen3Auth {
   /* ****************
      HELPER METHODS
    **************** */
+
+  private def makePost(url: String, body: String): HttpRequestBase = {
+    val request = new HttpPost(url)
+    request.setEntity(new ByteArrayEntity(
+      body.getBytes(charsetUtf8)
+    ))
+    request
+  }
 
   /**
     * Scope is a string used in the auth header and for calculating the signature.
@@ -194,13 +200,12 @@ object Gen3Auth {
     * @param bodyHash sha256 hash of body content
     * @return Long string which summarizes the HTTPRequest as needed for signing
     */
-  private def buildCanonicalRequest(request: HttpRequest, method: String, uri: String, bodyHash: String): String = {
-    val queryString = "" // Not used in our simple case, put here in case needed later.
+  private def buildCanonicalRequest(request: HttpRequest, method: String, uri: String, query: String, bodyHash: String): String = {
     val canonicalHeaders = buildCanonicalHeaders(request)
     Seq(
       method.toUpperCase,
       uri,
-      queryString, // <- this is the first blank line in the example
+      query, // <- this is the first blank line in the example
       canonicalHeaders, // <- Each of these ends with a \n, then we seperate with another \n (second blank line in example)
       signedHeaders,
       bodyHash
