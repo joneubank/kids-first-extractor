@@ -29,6 +29,12 @@ The following software is required to run the application:
 
 ## Quick Start
 
+### Config
+Copy `resources/gen3.template.yml` to `resources/gen3.yml` and update all values as required. 
+
+To generate an ID and Secret combination, go to your [Profile](https://gen3.kids-first.io/identity) page and click __Create access key__ to get a new ID/Key pair.
+
+### Run
 ```$bash
 sbt run
 ```

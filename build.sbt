@@ -13,5 +13,13 @@ libraryDependencies ++= Seq(
 // HMAC
 libraryDependencies += "com.gu" %% "hmac-headers" % "1.0"
 
-//JSON
-libraryDependencies += "org.json4s" %% "json4s-jackson" % "{latestVersion}"
+// JSON
+libraryDependencies += "org.json4s" %% "json4s-jackson" % "3.2.11"
+
+// YAML - using jackson - for config file
+libraryDependencies ++= Seq(
+  "com.fasterxml.jackson.core" % "jackson-core" % "2.9.3",
+  "com.fasterxml.jackson.core" % "jackson-annotations" % "2.9.3",
+  "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.3",
+  "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % "2.9.3"
+)

@@ -1,0 +1,5 @@
+id: YourAccessId
+secret: YourSecretKey
+protocol: https
+host: gen3.kids-first.io
+version: 0
