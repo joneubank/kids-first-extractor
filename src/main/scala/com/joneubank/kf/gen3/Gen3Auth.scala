@@ -1,7 +1,9 @@
 package com.joneubank.kf.gen3
 
 import java.text.SimpleDateFormat
-import java.util.{Calendar, TimeZone}
+import java.util.HashMap
+import java.util.Calendar
+import java.util.TimeZone
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import javax.ws.rs.HttpMethod
@@ -38,6 +40,10 @@ object Gen3Auth {
   private val service = "submission"
 
 
+  /* Precomputed Key Store */
+  private val authKeyStore = new HashMap[String, Array[Byte]]
+
+
   /* ***************
      REQUEST MAKER
    *************** */
@@ -52,7 +58,9 @@ object Gen3Auth {
     *
     * The content-type will be set to "application/json", modifications required if other payloads are needed.
     *
+    * @param method POST or GET accepted. If GET and body is included the signing will fail. use HttpMethod constants
     * @param path URI from after the host. Start with "/" Example: "/api/v0/submission/graphql"
+    * @param query Query string without the ? separator
     * @param body String representation of JSON
     * @return HttpRequest object ready to be sent, with headers set for Authorization to the submission service
     */
@@ -254,11 +262,19 @@ object Gen3Auth {
     * Generates the authKey - Used for calculating the Signature value
     *
     * Generation process is repeated HMAC hashing of values, most importantly the secret key.
+    *
+    * Because the key doesn't change for a specific day or service, we store computed key values and retrieve them
+    *  when called again, since the same key will be required frequently by the export process
     * @param shortDate YYYYMMdd formatted date
     * @param service Service name being requested - for Gen3 extract = "submission"
     * @return authKey as Array[Byte] (usable in the hmacHash method)
     */
   private def getAuthKey(shortDate: String, service: String) : Array[Byte] = {
+
+    val storeKey = s"$shortDate-$service"
+    if (authKeyStore.containsKey(storeKey)) {
+      return authKeyStore.get(storeKey)
+    }
 
     // The hashing process to generate the required Authorization token is build to mimic
     //  the python hmac auth lib from University of Chicago's Center for Data Intensive Science
@@ -267,7 +283,9 @@ object Gen3Auth {
     //  https://github.com/uc-cdis/cdis-python-utils/blob/master/cdispyutils/hmac4/hmac4_signing_key.py
     val dateKey = hmacHash(("HMAC4"+Gen3Config.secret).getBytes, shortDate)
     val serviceKey = hmacHash(dateKey, service)
-    hmacHash(serviceKey, "hmac4_request")
+    val authKey = hmacHash(serviceKey, "hmac4_request")
+    authKeyStore.put(storeKey, authKey)
+    authKey
   }
 
   /* ************

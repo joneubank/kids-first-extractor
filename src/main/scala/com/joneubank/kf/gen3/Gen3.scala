@@ -45,7 +45,19 @@ object Gen3 {
 
     val response = HttpClients.createDefault().execute(request)
 
-    Source.fromInputStream(response.getEntity().getContent()).getLines.mkString
+    Source.fromInputStream(response.getEntity().getContent()).getLines.mkString("\n")
+  }
+
+  /**
+    * Useful method signature, pass in a composite project ID as they are returned by the GraphQl responses,
+    *  this will break up the ID into program and project and pass those values to the export method
+    * @param project_id
+    * @param id
+    * @return
+    */
+  def export(project_id: String, id: String): String = {
+    val split = project_id.split("-")
+    export(program=split.apply(0), project=split.apply(1), id=id)
   }
 
   /* ****************
