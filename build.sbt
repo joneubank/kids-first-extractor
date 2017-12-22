@@ -4,6 +4,8 @@ name := "kids-first-extractor"
 organization := "com.joneubank.kf"
 version := "0.1"
 
+fork := true
+
 //Spark
 libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-core" % "2.2.0",
