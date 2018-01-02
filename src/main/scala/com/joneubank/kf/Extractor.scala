@@ -65,6 +65,13 @@ object Extractor {
 
     printBlock("SPARK EXECUTION:")
 
+//    nodeList.foreach((nodeType) => {
+//      val file = new File(s"$savePath/${nodeType}$saveSuffix")
+//      val bw = new BufferedWriter(new FileWriter(file))
+//
+//      bw.close()
+//    })
+
     val exports = sc.makeRDD(nodeList)
       .flatMap(nodeType => { getRecords(nodeType, countsMap(countKeyword(nodeType))) })
       .map(record => { (record.nodeType, getExport(record)) })
@@ -73,6 +80,7 @@ object Extractor {
       .foreach(tuple => {
         val file = new File(s"$savePath/${tuple._1}$saveSuffix")
         val bw = new BufferedWriter(new FileWriter(file))
+        bw.write(getHeaders(tuple._1))
         bw.write(tuple._2)
         bw.close()
       })
@@ -110,6 +118,14 @@ object Extractor {
   /* **************
      GEN3 HELPERS
    ************** */
+
+  private def getHeaders(nodeType: String): String = {
+    val record = getRecords(nodeType, 1).apply(0)
+    val response = Gen3.export(record.projectId, record.id)
+    // Need to remove first line.
+    response.replaceAll("\n.*$","\n")
+
+  }
 
   private def getCounts(): Map[String, BigInt] = {
     val countkeys = nodeList.map(countKeyword)
