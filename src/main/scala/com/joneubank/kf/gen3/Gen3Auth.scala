@@ -1,5 +1,6 @@
 package com.joneubank.kf.gen3
 
+import java.net.URLEncoder
 import java.text.SimpleDateFormat
 import java.util.HashMap
 import java.util.Calendar
@@ -213,7 +214,7 @@ object Gen3Auth {
     Seq(
       method.toUpperCase,
       uri,
-      query, // <- this is the first blank line in the example
+      query.replaceAll(",","%2C"), // blank in example, replace all commas with URL safe chars (a hack)
       canonicalHeaders, // <- Each of these ends with a \n, then we seperate with another \n (second blank line in example)
       signedHeaders,
       bodyHash

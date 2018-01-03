@@ -65,15 +65,8 @@ object Extractor {
 
     printBlock("SPARK EXECUTION:")
 
-//    nodeList.foreach((nodeType) => {
-//      val file = new File(s"$savePath/${nodeType}$saveSuffix")
-//      val bw = new BufferedWriter(new FileWriter(file))
-//
-//      bw.close()
-//    })
-
     val exports = sc.makeRDD(nodeList)
-      .flatMap(nodeType => { getRecords(nodeType, countsMap(countKeyword(nodeType))) })
+      .flatMap(nodeType => { getIdLists(nodeType, countsMap(countKeyword(nodeType))) })
       .map(record => { (record.nodeType, getExport(record)) })
       .groupByKey
       .map( tuple => (tuple._1, tuple._2.mkString("\n")) )
@@ -165,6 +158,37 @@ object Extractor {
       JField("id", JString(recordId)) <- caseRecord
       JField("project_id", JString(recordProject)) <- caseRecord
     } yield Record(nodeType, recordProject, recordId )
+  }
+
+  private def getIdLists(nodeType: String, qty: BigInt): Seq[Record] = {
+    val listSize: Int = 35 // Determined through trial/error what the server limit is. 40 worked, but to be safe reduced to 35
+    val records = getRecords(nodeType, qty)
+
+    // get all the project names
+    val projectsList = records.map(record=>record.projectId).distinct
+
+    // group all records by project name
+    val sortedRecords = projectsList.map(project=>records.filter(record=>record.projectId.equals(project)))
+
+    sortedRecords.flatMap(projectList=>{
+      // Collect each project list into groups of max size
+      val collected = collectRecords(projectList, listSize)
+      collected.map(collection=>{
+        val first = collection.apply(0)
+        val idString = collection.foldLeft("")((x, y)=>{if(x.length > 0) x + "," + y.id else y.id})
+        Record(first.nodeType, first.projectId, idString)
+      })
+    })
+
+  }
+
+  private def collectRecords(list: Seq[Extractor.Record], groupSize: Int): Seq[Seq[Extractor.Record]] = {
+    val numGroups = math.ceil(list.length / groupSize).toInt
+    (0 to numGroups-1).map(group => {
+      (0 to groupSize-1).map(i=>{
+        list.apply(group*groupSize+i)
+      })
+    })
   }
 
   private def getNodeData(key: String, qty: BigInt): JValue = {
