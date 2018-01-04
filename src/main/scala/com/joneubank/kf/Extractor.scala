@@ -16,6 +16,7 @@ object Extractor {
   private val projectId = "project_id"
   private val id = "id"
   private val nodeList = List("case", "demographic", "diagnosis", "sample", "aliquot", "read_group", "submitted_aligned_reads", "trio")
+//  private val nodeList = List("submitted_aligned_reads")
 
   private val dateFormatter = new SimpleDateFormat("YYYYMMddHHmmss")
   private val savePath = s"data/${dateFormatter.format(Calendar.getInstance.getTime)}/"
@@ -163,7 +164,7 @@ object Extractor {
   }
 
   private def getIdLists(nodeType: String, qty: BigInt): Seq[Record] = {
-    val listSize: Int = 35 // Determined through trial/error what the server limit is. 40 worked, but to be safe reduced to 35
+    val listSize: Int = if(nodeType.contains("submitted_aligned_reads")) 4 else 35 // Determined through trial/error what the server limit is. 40 worked, but to be safe reduced to 35
     val records = getRecords(nodeType, qty)
 
     // get all the project names
