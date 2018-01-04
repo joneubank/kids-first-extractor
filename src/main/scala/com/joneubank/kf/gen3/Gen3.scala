@@ -14,6 +14,8 @@ object Gen3 {
   private val apiBase = "/api/v" + Gen3Config.version
   private val graphqlPath = "/submission/graphql/"
 
+  var exportFormat = "json"
+
   /**
     *
     * @param query
@@ -45,7 +47,18 @@ object Gen3 {
 
     val response = HttpClients.createDefault().execute(request)
 
-    Source.fromInputStream(response.getEntity().getContent()).getLines.mkString("\n")
+    val output = Source.fromInputStream(response.getEntity().getContent()).getLines.mkString("\n")
+
+    if(exportFormat.equals("json")) simplifyExportJson(output) else output
+  }
+
+  def simplifyExportJson(formattedJson: String): String = {
+    formattedJson
+      .replaceAll("\\n]","")
+      .replaceAll("^\\[\\n","")
+      .replaceAll("\\}, \\n  \\{","}!#%#!{")
+      .replaceAll("\\s\\s+"," ")
+      .replaceAll("!#%#!","\n")
   }
 
   /**
@@ -69,7 +82,7 @@ object Gen3 {
   }
 
   private def exportQueryString(id: String): String = {
-    Seq("format=tsv&ids=", id).mkString
+    Seq(s"format=${exportFormat}&ids=", id).mkString
   }
 
 }

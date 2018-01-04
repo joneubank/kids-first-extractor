@@ -73,7 +73,9 @@ object Extractor {
       .foreach(tuple => {
         val file = new File(s"$savePath/${tuple._1}$saveSuffix")
         val bw = new BufferedWriter(new FileWriter(file))
-        bw.write(getHeaders(tuple._1))
+
+        if (Gen3.exportFormat.equals("tsv")) bw.write(getHeaders(tuple._1))
+
         bw.write(tuple._2)
         bw.close()
       })
